@@ -16,71 +16,91 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
-echo "Step 1: Installing dependencies..."
+echo "Step 1: Installing system dependencies..."
 
 # Update package manager
 sudo apt-get update -qq
 
-# Install required packages
+# Install required system packages
 sudo apt-get install -y \
     python3-gi \
+    python3-venv \
     gir1.2-appindicator3-0.1 \
-    lm-sensors \
-    python3-pip
+    lm-sensors
 
-# Install Python packages
-echo "Step 2: Installing Python dependencies..."
-pip3 install --user psutil dbus-python
+echo "Step 2: Creating Python virtual environment..."
 
-echo "Step 3: Setting up application files..."
+# Get the directory where the script is located (project root)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+VENV_DIR="$SCRIPT_DIR/venv"
+
+# Create virtual environment
+python3 -m venv "$VENV_DIR"
+
+echo "Step 3: Installing Python dependencies..."
+
+# Install requirements using the venv's pip
+"$VENV_DIR/bin/pip" install --upgrade pip
+"$VENV_DIR/bin/pip" install -r "$SCRIPT_DIR/requirements.txt"
+
+echo "Step 4: Setting up application files..."
 
 # Create installation directory
 INSTALL_DIR="$HOME/.local/share/tempicon"
 mkdir -p "$INSTALL_DIR"
 
 # Copy application files
-cp -v src/*.py "$INSTALL_DIR/"
+cp -v "$SCRIPT_DIR/src"/*.py "$INSTALL_DIR/"
 chmod +x "$INSTALL_DIR/temp_monitor.py"
 
-# Create symlink for easy execution
+# Copy the venv to the install directory
+cp -r "$VENV_DIR" "$INSTALL_DIR/"
+
+echo "Step 5: Creating launcher script..."
+
+# Create a wrapper script that uses the venv
 mkdir -p "$HOME/.local/bin"
-ln -sf "$INSTALL_DIR/temp_monitor.py" "$HOME/.local/bin/tempicon" || true
+cat > "$HOME/.local/bin/tempicon" << 'EOF'
+#!/bin/bash
+INSTALL_DIR="$HOME/.local/share/tempicon"
+exec "$INSTALL_DIR/venv/bin/python" "$INSTALL_DIR/temp_monitor.py"
+EOF
+chmod +x "$HOME/.local/bin/tempicon"
 
-echo "Step 4: Setting up systemd service..."
+echo "Step 6: Creating autostart .desktop file..."
 
-# Create systemd user service directory
-mkdir -p "$HOME/.config/systemd/user"
+# Create autostart directory
+mkdir -p "$HOME/.config/autostart"
 
-# Copy and customize service file
-SERVICE_FILE="$HOME/.config/systemd/user/tempicon.service"
-cp systemd/tempicon.service "$SERVICE_FILE"
-
-# Reload systemd
-systemctl --user daemon-reload
-
-echo "Step 5: Enabling auto-start..."
-
-# Enable service on boot
-systemctl --user enable tempicon.service
+# Create desktop file for autostart
+cat > "$HOME/.config/autostart/tempicon.desktop" << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=TempIcon
+Comment=Temperature indicator for system tray
+Exec=$HOME/.local/bin/tempicon
+Icon=utilities-system-monitor
+Categories=System;Utility;
+X-GNOME-Autostart-enabled=true
+Hidden=false
+EOF
 
 echo ""
 echo "=== Installation Complete ==="
 echo ""
 echo "To start TempIcon now, run:"
-echo "  systemctl --user start tempicon"
+echo "  $HOME/.local/bin/tempicon"
 echo ""
-echo "To view status:"
-echo "  systemctl --user status tempicon"
+echo "TempIcon will automatically start on your next login."
 echo ""
-echo "To view logs:"
-echo "  journalctl --user -u tempicon -f"
+echo "To view the application:"
+echo "  Look for the temperature indicator in the system tray"
 echo ""
 echo "To open settings:"
 echo "  Right-click the temperature indicator in the system tray"
 echo ""
 echo "To uninstall:"
-echo "  systemctl --user stop tempicon"
-echo "  systemctl --user disable tempicon"
 echo "  rm -rf $INSTALL_DIR"
 echo "  rm $HOME/.local/bin/tempicon"
+echo "  rm $HOME/.config/autostart/tempicon.desktop"
 echo ""
