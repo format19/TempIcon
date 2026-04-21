@@ -17,18 +17,7 @@ if [ "$confirm" != "yes" ]; then
 fi
 
 echo ""
-echo "Step 1: Stopping and disabling service..."
-
-# Stop the service if running
-systemctl --user stop tempicon 2>/dev/null || true
-
-# Disable auto-start
-systemctl --user disable tempicon 2>/dev/null || true
-
-echo "✓ Service stopped and disabled"
-
-echo ""
-echo "Step 2: Removing application files..."
+echo "Step 1: Removing application files..."
 
 # Remove application directory
 if [ -d "$HOME/.local/share/tempicon" ]; then
@@ -36,18 +25,39 @@ if [ -d "$HOME/.local/share/tempicon" ]; then
     echo "✓ Removed ~/.local/share/tempicon"
 fi
 
-# Remove symlink
-if [ -L "$HOME/.local/bin/tempicon" ]; then
+# Remove launcher script
+if [ -f "$HOME/.local/bin/tempicon" ]; then
     rm "$HOME/.local/bin/tempicon"
-    echo "✓ Removed ~/.local/bin/tempicon symlink"
+    echo "✓ Removed ~/.local/bin/tempicon"
 fi
 
 echo ""
-echo "Step 3: Removing systemd service file..."
+echo "Step 2: Removing autostart configuration..."
 
-# Remove service file
-if [ -f "$HOME/.config/systemd/user/tempicon.service" ]; then
-    rm "$HOME/.config/systemd/user/tempicon.service"
+# Remove desktop file
+if [ -f "$HOME/.config/autostart/tempicon.desktop" ]; then
+    rm "$HOME/.config/autostart/tempicon.desktop"
+    echo "✓ Removed ~/.config/autostart/tempicon.desktop"
+fi
+
+echo ""
+echo "Step 3: Removing configuration files..."
+
+# Remove config directory (optional - user can keep their settings)
+read -p "Remove configuration files? (yes/no): " remove_config
+
+if [ "$remove_config" = "yes" ]; then
+    if [ -d "$HOME/.config/tempicon" ]; then
+        rm -rf "$HOME/.config/tempicon"
+        echo "✓ Removed ~/.config/tempicon"
+    fi
+else
+    echo "✓ Kept ~/.config/tempicon (configuration preserved)"
+fi
+
+echo ""
+echo "=== Uninstallation Complete ==="
+echo ""
     echo "✓ Removed ~/.config/systemd/user/tempicon.service"
 fi
 

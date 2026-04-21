@@ -26,6 +26,8 @@ sudo apt-get install -y \
     python3-gi \
     python3-venv \
     gir1.2-appindicator3-0.1 \
+    gir1.2-gtk-3.0 \
+    gir1.2-glib-2.0 \
     lm-sensors
 
 echo "Step 2: Creating Python virtual environment..."
@@ -34,8 +36,9 @@ echo "Step 2: Creating Python virtual environment..."
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 VENV_DIR="$SCRIPT_DIR/venv"
 
-# Create virtual environment
-python3 -m venv "$VENV_DIR"
+# Create virtual environment with system site packages
+# This allows access to system-installed gi module (PyGObject)
+python3 -m venv "$VENV_DIR" --system-site-packages
 
 echo "Step 3: Installing Python dependencies..."
 
