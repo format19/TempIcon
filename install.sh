@@ -76,7 +76,7 @@ echo "Step 6: Creating autostart .desktop file..."
 mkdir -p "$HOME/.config/autostart"
 
 # Create desktop file for autostart
-cat > "$HOME/.config/autostart/tempicon.desktop" << 'EOF'
+cat > "$HOME/.config/autostart/tempicon.desktop" << EOF
 [Desktop Entry]
 Type=Application
 Name=TempIcon
