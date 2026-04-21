@@ -36,6 +36,7 @@ A minimal system tray application that monitors your CPU temperature in real-tim
 ### Quick Install
 
 ```bash
+git clone https://github.com/format19/TempIcon.git
 cd TempIcon
 chmod +x install.sh
 ./install.sh
