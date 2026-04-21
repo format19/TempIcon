@@ -44,8 +44,8 @@ chmod +x install.sh
 The installer will:
 - Install system dependencies (Python libraries, lm-sensors)
 - Copy application files to `~/.local/share/tempicon/`
-- Register and enable systemd user service for auto-start
-- Create a convenient symlink in `~/.local/bin/`
+- Create a launcher script in `~/.local/bin/`
+- Set up autostart via .desktop file in `~/.config/autostart/`
 
 ### Manual Installation
 
@@ -62,60 +62,57 @@ If you prefer to set up manually:
    pip3 install --user -r requirements.txt
    ```
 
-3. **Copy application files**:
+3. **Copy application files and create launcher**:
    ```bash
-   mkdir -p ~/.local/share/tempicon
+   mkdir -p ~/.local/share/tempicon ~/.local/bin
    cp src/*.py ~/.local/share/tempicon/
    chmod +x ~/.local/share/tempicon/temp_monitor.py
+   
+   # Create launcher script
+   cat > ~/.local/bin/tempicon << 'EOF'
+   #!/bin/bash
+   exec python3 ~/.local/share/tempicon/temp_monitor.py
+   EOF
+   chmod +x ~/.local/bin/tempicon
    ```
 
-4. **Setup systemd service**:
+4. **Setup autostart**:
    ```bash
-   mkdir -p ~/.config/systemd/user
-   cp systemd/tempicon.service ~/.config/systemd/user/
-   systemctl --user daemon-reload
-   systemctl --user enable tempicon.service
-   systemctl --user start tempicon
+   mkdir -p ~/.config/autostart
+   cat > ~/.config/autostart/tempicon.desktop << 'EOF'
+   [Desktop Entry]
+   Type=Application
+   Name=TempIcon
+   Comment=Temperature indicator for system tray
+   Exec=$HOME/.local/bin/tempicon
+   Icon=utilities-system-monitor
+   Categories=System;Utility;
+   X-GNOME-Autostart-enabled=true
+   Hidden=false
+   EOF
    ```
 
 ---
 
 ## 🚀 Usage
 
-### Start the Service
+### Start the Application
 
 ```bash
-# Start the service
-systemctl --user start tempicon
+# Run directly from command line
+~/.local/bin/tempicon
 
-# Or run directly from command line
+# Or using Python directly
 python3 ~/.local/share/tempicon/temp_monitor.py
 ```
+
+The application will also start automatically on the next login via the .desktop autostart file.
 
 ### Configure Settings
 
 Right-click on the temperature indicator in the system tray to access the menu:
 - **Settings** - Adjust update interval, temperature units, icon style, and thresholds
 - **Quit** - Stop the application
-
-### View Logs
-
-```bash
-# Stream logs in real-time
-journalctl --user -u tempicon -f
-
-# View last 50 log lines
-journalctl --user -u tempicon -n 50
-
-# View logs since last boot
-journalctl --user -u tempicon --since today
-```
-
-### Check Service Status
-
-```bash
-systemctl --user status tempicon
-```
 
 ---
 
@@ -126,25 +123,6 @@ To completely remove TempIcon and all its files:
 ```bash
 chmod +x uninstall.sh
 ./uninstall.sh
-```
-
-Or manually:
-
-```bash
-# Stop and disable the service
-systemctl --user stop tempicon
-systemctl --user disable tempicon
-
-# Remove application files
-rm -rf ~/.local/share/tempicon
-rm ~/.local/bin/tempicon 2>/dev/null || true
-
-# Remove service file
-rm ~/.config/systemd/user/tempicon.service
-systemctl --user daemon-reload
-
-# Remove configuration
-rm -rf ~/.config/tempicon
 ```
 
 ---
@@ -178,17 +156,17 @@ Settings are stored in `~/.config/tempicon/config.json` and can be edited manual
 
 ### Application doesn't appear in system tray
 
-Check that the service is running:
-```bash
-systemctl --user status tempicon
-```
-
-View logs for errors:
-```bash
-journalctl --user -u tempicon -f
-```
-
 Ensure you're using GNOME or a compatible desktop environment.
+
+Try running the application directly to see if there are any errors:
+```bash
+~/.local/bin/tempicon
+```
+
+Check that the desktop file is set up correctly:
+```bash
+cat ~/.config/autostart/tempicon.desktop
+```
 
 ### "No sensor data" error
 
@@ -229,8 +207,7 @@ TempIcon/
 │   ├── config_manager.py        # Settings persistence
 │   ├── settings_dialog.py       # GTK configuration UI
 │   └── icon_generator.py        # SVG icon generation (reserved)
-├── systemd/                      # Service configuration
-│   └── tempicon.service         # Systemd user service file
+├── config/                       # Configuration files (optional)
 ├── install.sh                    # Installation script
 ├── uninstall.sh                  # Uninstallation script
 ├── requirements.txt              # Python dependencies

@@ -58,24 +58,5 @@ fi
 echo ""
 echo "=== Uninstallation Complete ==="
 echo ""
-    echo "✓ Removed ~/.config/systemd/user/tempicon.service"
-fi
-
-# Reload systemd daemon
-systemctl --user daemon-reload
-echo "✓ Reloaded systemd"
-
-echo ""
-echo "Step 4: Removing configuration files..."
-
-# Remove config directory
-if [ -d "$HOME/.config/tempicon" ]; then
-    rm -rf "$HOME/.config/tempicon"
-    echo "✓ Removed ~/.config/tempicon"
-fi
-
-echo ""
-echo "=== Uninstallation Complete ==="
-echo ""
 echo "All TempIcon files and configurations have been removed."
 echo ""
